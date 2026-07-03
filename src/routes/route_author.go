@@ -20,6 +20,7 @@ func (ar *AuthorRoutes) CreateAuthor(c *gin.Context) {
 		Author entities.Author `json:"author"`
 		Person entities.Person `json:"person"`
 	}
+	
 	ctx := c.Request.Context()
 	// 2. Bind the JSON once
 	if err := c.ShouldBindJSON(&req); err != nil {

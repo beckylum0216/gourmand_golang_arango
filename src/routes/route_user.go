@@ -21,19 +21,21 @@ func NewUserRoutes(userService interfaces.IUser) *UserRoutes {
 func (ur *UserRoutes) CreateUser(c *gin.Context) {
 	var user entities.User
 	var person entities.Person
-	if err := c.ShouldBindJSON(&user); 
-	err != nil {
+
+	var req struct {
+		User   entities.User   `json:"user"`
+		Person entities.Person `json:"person"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := c.ShouldBindJSON(&person); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+	user = req.User
+	person = req.Person
 
-	if err := ur.userService.CreateUser(c.Request.Context(), &person, &user); 
-	err != nil {
+	if err := ur.userService.CreateUser(c.Request.Context(), &person, &user); err != nil {
 		// return a sensible error instead of letting a panic bubble up
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
