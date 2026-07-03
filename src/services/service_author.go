@@ -32,7 +32,7 @@ func (s *AuthorService) CreateAuthor(ctx context.Context,
 
 	var personkey string
 
-	if person.Id == "" {
+	if person.Id != "" {
 		existing, err := s._persons.GetPerson(ctx, person.Id)
 		if err != nil {
 			return err
