@@ -10,22 +10,27 @@ import (
 	"gourmand.golang.arango/src/interfaces"
 )
 
-const persons_collection = "persons"
 const users_collection = "users"
 const persons_users_edges = "persons_users"
 
 type UserService struct {
 	db       arangodb.Database
 	_persons *PersonService
+	_auth    *AuthenticationService
 }
 
 func NewUserService(db arangodb.Database) interfaces.IUser {
 	personService := NewPersonService(db)
-	return &UserService{db: db, _persons: personService.(*PersonService)}
+	authService := NewAuthenticationService(db)
+	return &UserService{
+		db: db, 
+		_persons: personService.(*PersonService),
+		_auth:    authService,
+	}
 }
 
 func (s *UserService) CreateUser(ctx context.Context,
-	person *entities.Person, user *entities.User) error {
+	person *entities.Person, user *entities.User, auth *entities.Authentication) error {
 	if user == nil {
 		return errors.New("user is nil")
 	}
@@ -77,6 +82,28 @@ func (s *UserService) CreateUser(ctx context.Context,
 		return errors.New("failed to create edge between person and user: " + err.Error())
 	}
 
+	authUser, err := s._auth.CreateAuthentication(ctx, auth.Email, auth.Password)
+	if err != nil {
+		return errors.New("failed to create authentication for user: " + err.Error())
+	}
+
+	auth.Id = authUser.Id
+
+	authEdgeCol, err := s.db.GetCollection(ctx, "users_authentications", nil)
+	if err != nil {
+		return errors.New("failed to get users_authentications collection: " + err.Error())
+	}
+
+	authEdge := map[string]interface{}{
+		"_from": "users/" + user.Id,
+		"_to":   "authentications/" + auth.Id,
+	}
+
+	_, err = authEdgeCol.CreateDocument(ctx, authEdge)
+	if err != nil {
+		return errors.New("failed to create edge between user and authentication: " + err.Error())
+	}
+	
 	return nil
 }
 

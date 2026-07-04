@@ -25,6 +25,7 @@ func (ur *UserRoutes) CreateUser(c *gin.Context) {
 	var req struct {
 		User   entities.User   `json:"user"`
 		Person entities.Person `json:"person"`
+		Auth   entities.Authentication `json:"auth"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -34,8 +35,9 @@ func (ur *UserRoutes) CreateUser(c *gin.Context) {
 
 	user = req.User
 	person = req.Person
+	auth := req.Auth
 
-	if err := ur.userService.CreateUser(c.Request.Context(), &person, &user); err != nil {
+	if err := ur.userService.CreateUser(c.Request.Context(), &person, &user, &auth); err != nil {
 		// return a sensible error instead of letting a panic bubble up
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

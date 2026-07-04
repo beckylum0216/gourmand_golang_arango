@@ -72,7 +72,6 @@ func (s *AuthorService) CreateAuthor(ctx context.Context,
 	err != nil {
 		return err
 	}
-
 	
 	return nil
 }
