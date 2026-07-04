@@ -12,6 +12,7 @@ import (
 
 const users_collection = "users"
 const persons_users_edges = "persons_users"
+const users_authentications_edges = "users_authentications"
 
 type UserService struct {
 	db       arangodb.Database
@@ -89,7 +90,7 @@ func (s *UserService) CreateUser(ctx context.Context,
 
 	auth.Id = authUser.Id
 
-	authEdgeCol, err := s.db.GetCollection(ctx, "users_authentications", nil)
+	authEdgeCol, err := s.db.GetCollection(ctx, users_authentications_edges, nil)
 	if err != nil {
 		return errors.New("failed to get users_authentications collection: " + err.Error())
 	}
