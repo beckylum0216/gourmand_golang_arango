@@ -4,15 +4,21 @@ import (
 	"os"
 	"time"
 	"context"
+	"log"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"gourmand.golang.arango/src/database"
 	"gourmand.golang.arango/src/routes"
 	"gourmand.golang.arango/src/services"
 )
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Println("no .env file found, falling back to system environment variables")
+	}
+
 	ctx := context.Background()
 	dsn := os.Getenv("ARANGO_ENDPOINT")
 	userName := os.Getenv("ARANGO_USER")

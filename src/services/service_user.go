@@ -1,41 +1,47 @@
 package services
 
 import (
-	"errors"
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/arangodb/go-driver/v2/arangodb"
 	"gourmand.golang.arango/src/entities"
 	"gourmand.golang.arango/src/interfaces"
 )
 
+const persons_collection = "persons"
 const users_collection = "users"
 const persons_users_edges = "persons_users"
 
 type UserService struct {
-	db arangodb.Database
+	db       arangodb.Database
+	_persons *PersonService
 }
 
 func NewUserService(db arangodb.Database) interfaces.IUser {
-	return &UserService{db: db}
+	personService := NewPersonService(db)
+	return &UserService{db: db, _persons: personService.(*PersonService)}
 }
 
-func (s *UserService) CreateUser(ctx context.Context, 
+func (s *UserService) CreateUser(ctx context.Context,
 	person *entities.Person, user *entities.User) error {
 	if user == nil {
 		return errors.New("user is nil")
 	}
 
-	if person == nil {
-		col, err := s.db.GetCollection(ctx, users_collection, nil)
+	if person.Id != "" {
+		existing, err := s._persons.GetPerson(ctx, person.Id)
 		if err != nil {
 			return err
 		}
-		meta, err := col.CreateDocument(ctx, user)
+		person.Id = existing.Id
+	} else {
+		created, err := s._persons.CreatePerson(ctx, person)
 		if err != nil {
 			return err
 		}
-		user.Id = meta.Key
+		person.Id = created.Id
 	}
 
 	col, err := s.db.GetCollection(ctx, users_collection, nil)
@@ -56,10 +62,14 @@ func (s *UserService) CreateUser(ctx context.Context,
 		return err
 	}
 
+	if person.Id == "" || user.Id == "" {
+		return fmt.Errorf("cannot create edge: personKey=%q userKey=%q", person.Id, user.Id)
+	}
+
 	edge := map[string]interface{}{
 		"_from": "persons/" + person.Id,
 		"_to":   "users/" + user.Id,
-	}	
+	}
 
 	_, err = edgeCol.CreateDocument(ctx, edge)
 
@@ -83,7 +93,7 @@ func (s *UserService) GetUser(ctx context.Context, id string) (*entities.User, e
 	}
 
 	user.Id = meta.Key
-	
+
 	return &user, nil
 }
 
