@@ -3,27 +3,27 @@ package services
 import (
 	"context"
 	"errors"
-	
+
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/arangodb/go-driver/v2/arangodb"
+	"github.com/golang-jwt/jwt/v5"
 
-	"gourmand.golang.arango/src/enums"
 	"gourmand.golang.arango/src/entities"
+	"gourmand.golang.arango/src/enums"
 )
 
 type Token struct {
-	Email	string `json:"email"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Role enums.Role `json:"role"`
+	Email    string     `json:"email"`
+	Username string     `json:"username"`
+	Password string     `json:"password"`
+	Role     enums.Role `json:"role"`
 	jwt.RegisteredClaims
 }
 
 const authenticationCollection = "authentications"
 
-type AuthenticationService struct{
+type AuthenticationService struct {
 	db arangodb.Database
 }
 
@@ -42,7 +42,7 @@ func (s *AuthenticationService) CreateAuthentication(
 		Email:    email,
 		Password: string(hashedPassword),
 	}
-	
+
 	col, err := s.db.GetCollection(ctx, authenticationCollection, nil)
 	if err != nil {
 		return nil, err
@@ -58,11 +58,10 @@ func (s *AuthenticationService) CreateAuthentication(
 	return &auth, nil
 }
 
-
 func (s *AuthenticationService) GenerateToken(ctx context.Context, email string, password string) (string, error) {
 	claims := Token{
-		Email:    email,
-		Password: password,
+		Email:            email,
+		Password:         password,
 		RegisteredClaims: jwt.RegisteredClaims{},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -71,7 +70,7 @@ func (s *AuthenticationService) GenerateToken(ctx context.Context, email string,
 
 func (s *AuthenticationService) AuthenticateUser(
 	ctx context.Context, email, password string) (bool, error) {
-	
+
 	query := `FOR u IN @@collection 
 		FILTER u.email == @email 
 		LIMIT 1 
@@ -100,11 +99,9 @@ func (s *AuthenticationService) AuthenticateUser(
 		return false, err
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(auth.Password), []byte(password)); 
-	err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(auth.Password), []byte(password)); err != nil {
 		return false, errors.New("invalid password")
 	}
-	
+
 	return true, nil
 }
-

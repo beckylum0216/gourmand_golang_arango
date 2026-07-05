@@ -15,13 +15,23 @@ func NewAuthenticationRoute(authService interfaces.IAuthentication) *Authenticat
 	}
 }
 
-
 func (r *AuthenticationRoute) GenerateToken(c *gin.Context, email, username, password string) (string, error) {
 	ctx := c.Request.Context()
 	return r.AuthenticationService.GenerateToken(ctx, email, password)
 }
 
-func (r *AuthenticationRoute) AuthenticateUser(c *gin.Context) (bool, error) {
+func (r *AuthenticationRoute) AuthenticateUser(c *gin.Context) {
 	ctx := c.Request.Context()
-	return r.AuthenticationService.AuthenticateUser(ctx, c.PostForm("email"), c.PostForm("password"))
+	result, err := r.AuthenticationService.AuthenticateUser(ctx, c.PostForm("email"), c.PostForm("password"))
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	if !result {
+		c.JSON(401, gin.H{"error": "Invalid email or password"})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "Authentication successful"})
 }

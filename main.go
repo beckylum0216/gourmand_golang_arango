@@ -47,6 +47,8 @@ func main() {
 	authorRoutes := routes.NewAuthorRoutes(authorService)
 	recipeService := services.NewRecipeService(*db)
 	recipeRoutes := routes.NewRecipeRoutes(recipeService)
+	authService := services.NewAuthenticationService(*db)
+	authRoutes := routes.NewAuthenticationRoute(authService)
 
 	api := router.Group("/api")
 	{
@@ -58,6 +60,7 @@ func main() {
 		api.POST("/transcribe_recipe", recipeRoutes.TranscribeRecipe)
 		api.GET("/get_recipe/:id", recipeRoutes.GetRecipe)
 		api.GET("/get_recipes", recipeRoutes.GetRecipes)
+		api.POST("/login", authRoutes.AuthenticateUser)
 	}
 
 	router.Run("localhost:8080")
