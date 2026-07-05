@@ -1,10 +1,10 @@
 package main
 
 import (
-	"os"
-	"time"
 	"context"
 	"log"
+	"os"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -38,7 +38,6 @@ func main() {
 		AllowCredentials: true, MaxAge: 12 * time.Hour,
 	}))
 
-
 	userService := services.NewUserService(*db)
 	userRoutes := routes.NewUserRoutes(userService)
 	personService := services.NewPersonService(*db)
@@ -49,7 +48,7 @@ func main() {
 	recipeRoutes := routes.NewRecipeRoutes(recipeService)
 	authService, err := services.NewAuthenticationService(*db)
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to initialize auth service: %v", err)
 	}
 	authRoutes := routes.NewAuthenticationRoute(authService)
 
@@ -68,16 +67,15 @@ func main() {
 		api.GET("/get_author/:id", authorRoutes.GetAuthor)
 		api.GET("/get_authors", authorRoutes.GetAuthors)
 		api.POST("/delete_author/:id", authorRoutes.DeleteAuthor)
-		
+
 		api.POST("/create_recipe", recipeRoutes.CreateRecipe)
 		api.POST("/transcribe_recipe", recipeRoutes.TranscribeRecipe)
 		api.GET("/get_recipe/:id", recipeRoutes.GetRecipe)
 		api.GET("/get_recipes", recipeRoutes.GetRecipes)
 		api.POST("/delete_recipe/:id", recipeRoutes.DeleteRecipe)
-		
+
 		api.POST("/login", authRoutes.AuthenticateUser)
 	}
 
 	router.Run("localhost:8080")
 }
-
