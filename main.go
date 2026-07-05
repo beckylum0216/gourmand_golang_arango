@@ -61,6 +61,7 @@ func main() {
 		api.GET("/get_recipe/:id", recipeRoutes.GetRecipe)
 		api.GET("/get_recipes", recipeRoutes.GetRecipes)
 		api.POST("/login", authRoutes.AuthenticateUser)
+		api.POST("/generate_token", authRoutes.GenerateToken)
 	}
 
 	router.Run("localhost:8080")

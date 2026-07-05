@@ -15,9 +15,16 @@ func NewAuthenticationRoute(authService interfaces.IAuthentication) *Authenticat
 	}
 }
 
-func (r *AuthenticationRoute) GenerateToken(c *gin.Context, email, username, password string) (string, error) {
+func (r *AuthenticationRoute) GenerateToken(c *gin.Context, email, password string) {
 	ctx := c.Request.Context()
-	return r.AuthenticationService.GenerateToken(ctx, email, password)
+
+	token, err := r.AuthenticationService.GenerateToken(ctx, email, password)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{"token": token})
 }
 
 func (r *AuthenticationRoute) AuthenticateUser(c *gin.Context) {
