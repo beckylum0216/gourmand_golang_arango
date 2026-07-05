@@ -15,12 +15,12 @@ func NewAuthenticationRoute(authService interfaces.IAuthentication) *Authenticat
 	}
 }
 
-func (r *AuthenticationRoute) GenerateToken(c *gin.Context) {
+func (r *AuthenticationRoute) Refresh(c *gin.Context) {
 	ctx := c.Request.Context()
 	email := c.PostForm("email")
-	password := c.PostForm("password")
 
-	token, err := r.AuthenticationService.GenerateToken(ctx, email, password)
+	token, err := r.AuthenticationService.GenerateToken(ctx, email)
+	
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
@@ -42,5 +42,30 @@ func (r *AuthenticationRoute) AuthenticateUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, gin.H{"message": "Authentication successful"})
+	token, err := r.AuthenticationService.GenerateToken(ctx, c.PostForm("email"))
+	
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{"token": token})
+}
+
+func (r *AuthenticationRoute) AuthenticateToken(c *gin.Context) {
+	ctx := c.Request.Context()
+	token := c.GetHeader("Token")
+
+	valid, err := r.AuthenticationService.AuthenticateToken(ctx, token)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	if !valid {
+		c.JSON(401, gin.H{"error": "Invalid token"})
+		return
+	}
+
+	c.JSON(200, gin.H{"valid": true})
 }

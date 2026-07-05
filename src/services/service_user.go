@@ -22,7 +22,11 @@ type UserService struct {
 
 func NewUserService(db arangodb.Database) interfaces.IUser {
 	personService := NewPersonService(db)
-	authService := NewAuthenticationService(db)
+	authService, err := NewAuthenticationService(db)
+	if err != nil {
+		panic(err)
+	}
+
 	return &UserService{
 		db: db, 
 		_persons: personService.(*PersonService),
@@ -123,6 +127,37 @@ func (s *UserService) GetUser(ctx context.Context, id string) (*entities.User, e
 	user.Id = meta.Key
 
 	return &user, nil
+}
+
+func (s *UserService) GetUsers(ctx context.Context) ([]*entities.User, error) {
+	query := `FOR u IN @@collection RETURN u`
+	
+	bindVars := map[string]interface{}{
+		"@collection": users_collection,
+	}
+
+	options := &arangodb.QueryOptions{
+		BindVars: bindVars,
+	}
+
+	cursor, err := s.db.Query(ctx, query, options)
+	if err != nil {
+		return nil, err
+	}
+
+	defer cursor.Close()
+
+	var users []*entities.User
+	for cursor.HasMore() {
+		var user entities.User
+		_, err := cursor.ReadDocument(ctx, &user)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, &user)
+	}
+
+	return users, nil
 }
 
 func (s *UserService) UpdateUser(ctx context.Context, id string, user *entities.User) error {

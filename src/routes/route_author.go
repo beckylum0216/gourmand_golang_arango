@@ -52,6 +52,16 @@ func (ar *AuthorRoutes) GetAuthor(c *gin.Context) {
 	c.JSON(200, author)
 }
 
+func (ar *AuthorRoutes) GetAuthors(c *gin.Context) {
+	ctx := c.Request.Context()
+	authors, err := ar.authorService.GetAuthors(ctx)
+	if err != nil {
+		c.JSON(404, gin.H{"error": "No authors found"})
+		return
+	}
+	c.JSON(200, authors)
+}
+
 func (ar *AuthorRoutes) UpdateAuthor(c *gin.Context) {
 	ctx := c.Request.Context()
 	var authorData = &entities.Author{}

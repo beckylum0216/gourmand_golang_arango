@@ -47,21 +47,35 @@ func main() {
 	authorRoutes := routes.NewAuthorRoutes(authorService)
 	recipeService := services.NewRecipeService(*db)
 	recipeRoutes := routes.NewRecipeRoutes(recipeService)
-	authService := services.NewAuthenticationService(*db)
+	authService, err := services.NewAuthenticationService(*db)
+	if err != nil {
+		panic(err)
+	}
 	authRoutes := routes.NewAuthenticationRoute(authService)
 
 	api := router.Group("/api")
 	{
 		api.POST("/create_user", userRoutes.CreateUser)
 		api.GET("/get_user/:id", userRoutes.GetUser)
+		api.GET("/get_users", userRoutes.GetUsers)
+		api.POST("/delete_user/:id", userRoutes.DeleteUser)
+
+		api.GET("/get_person/:id", personRoutes.GetPerson)
 		api.GET("/get_persons", personRoutes.GetPersons)
+		api.POST("/delete_person/:id", personRoutes.DeletePerson)
+
 		api.POST("/create_author", authorRoutes.CreateAuthor)
+		api.GET("/get_author/:id", authorRoutes.GetAuthor)
+		api.GET("/get_authors", authorRoutes.GetAuthors)
+		api.POST("/delete_author/:id", authorRoutes.DeleteAuthor)
+		
 		api.POST("/create_recipe", recipeRoutes.CreateRecipe)
 		api.POST("/transcribe_recipe", recipeRoutes.TranscribeRecipe)
 		api.GET("/get_recipe/:id", recipeRoutes.GetRecipe)
 		api.GET("/get_recipes", recipeRoutes.GetRecipes)
+		api.POST("/delete_recipe/:id", recipeRoutes.DeleteRecipe)
+		
 		api.POST("/login", authRoutes.AuthenticateUser)
-		api.POST("/generate_token", authRoutes.GenerateToken)
 	}
 
 	router.Run("localhost:8080")

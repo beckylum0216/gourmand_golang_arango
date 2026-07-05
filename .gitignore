@@ -32,3 +32,8 @@ go.work.sum
 # .vscode/
 # Ignore Go debugging binaries
 __debug_bin*
+
+# rsa key
+*.pem
+*.key
+*.key.pub

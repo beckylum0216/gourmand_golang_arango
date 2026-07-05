@@ -59,3 +59,21 @@ func (ur *UserRoutes) GetUser(c *gin.Context) {
 	}
 	c.JSON(200, user)
 }
+
+func (ur *UserRoutes) GetUsers(c *gin.Context) {
+	users, err := ur.userService.GetUsers(c.Request.Context())
+	if err != nil {
+		c.JSON(404, gin.H{"error": "No users found"})
+		return
+	}
+	c.JSON(200, users)
+}
+
+func (ur *UserRoutes) DeleteUser(c *gin.Context) {
+	id := c.Param("id")
+	if err := ur.userService.DeleteUser(c.Request.Context(), id); err != nil {
+		c.JSON(404, gin.H{"error": "User not found"})
+		return
+	}
+	c.JSON(200, gin.H{"message": "User deleted successfully"})
+}
