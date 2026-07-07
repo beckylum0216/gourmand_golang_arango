@@ -19,6 +19,11 @@ func main() {
 		log.Println("no .env file found, falling back to system environment variables")
 	}
 
+	log.Println("ARANGO_ENDPOINT:", os.Getenv("ARANGO_ENDPOINT"))
+	log.Println("ARANGO_USER:", os.Getenv("ARANGO_USER"))
+	log.Println("ARANGO_PASSWORD:", os.Getenv("ARANGO_PASSWORD"))
+	log.Println("ARANGO_DB_NAME:", os.Getenv("ARANGO_DB_NAME"))
+
 	ctx := context.Background()
 	dsn := os.Getenv("ARANGO_ENDPOINT")
 	userName := os.Getenv("ARANGO_USER")
@@ -26,7 +31,7 @@ func main() {
 	name := os.Getenv("ARANGO_DB_NAME")
 	db, err := database.NewArangoDB(ctx, dsn, userName, password, name)
 	if err != nil {
-		panic("failed to connect database")
+		panic("failed to connect database: " + err.Error())
 	}
 
 	router := gin.Default()
@@ -77,5 +82,5 @@ func main() {
 		api.POST("/login", authRoutes.AuthenticateUser)
 	}
 
-	router.Run("localhost:8080")
+	router.Run("0.0.0.0:8080")
 }
