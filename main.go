@@ -85,6 +85,7 @@ func main() {
 		api.POST("/delete_recipe/:id", recipeRoutes.DeleteRecipe)
 
 		api.POST("/login", authRoutes.AuthenticateUser)
+		api.GET("/authenticate_token", authRoutes.AuthenticateToken)
 	}
 
 	router.Run("0.0.0.0:8080")

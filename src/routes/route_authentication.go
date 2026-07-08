@@ -20,7 +20,7 @@ func (r *AuthenticationRoute) Refresh(c *gin.Context) {
 	email := c.PostForm("email")
 
 	token, err := r.AuthenticationService.GenerateToken(ctx, email)
-	
+
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
@@ -43,7 +43,7 @@ func (r *AuthenticationRoute) AuthenticateUser(c *gin.Context) {
 	}
 
 	token, err := r.AuthenticationService.GenerateToken(ctx, c.PostForm("email"))
-	
+
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
@@ -55,7 +55,12 @@ func (r *AuthenticationRoute) AuthenticateUser(c *gin.Context) {
 func (r *AuthenticationRoute) AuthenticateToken(c *gin.Context) {
 	ctx := c.Request.Context()
 	token := c.GetHeader("Token")
-
+	if token == "" {
+		token = c.GetHeader("Authorization")
+		if len(token) > 7 && token[:7] == "Bearer " {
+			token = token[7:]
+		}
+	}
 	valid, err := r.AuthenticationService.AuthenticateToken(ctx, token)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
