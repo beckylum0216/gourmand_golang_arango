@@ -2,6 +2,7 @@ package interfaces
 
 import (
 	"context"
+
 	"gourmand.golang.arango/src/entities"
 )
 
@@ -11,4 +12,6 @@ type IPerson interface {
 	GetPersons(ctx context.Context) ([]*entities.Person, error)
 	UpdatePerson(ctx context.Context, id string, person *entities.Person) error
 	DeletePerson(ctx context.Context, id string) error
+	GetPersonDetails(ctx context.Context, key string) (*entities.PersonWithDetails, error)
+	GetPeopleWithDetails(ctx context.Context) ([]*entities.PeopleWithDetails, error)
 }

@@ -72,6 +72,8 @@ func main() {
 		api.GET("/get_person/:id", personRoutes.GetPerson)
 		api.GET("/get_persons", personRoutes.GetPersons)
 		api.POST("/delete_person/:id", personRoutes.DeletePerson)
+		api.GET("/person/:id/details", personRoutes.GetPersonDetails)
+		api.GET("/get_people_with_details", personRoutes.GetPeopleWithDetails)
 
 		api.POST("/create_author", authorRoutes.CreateAuthor)
 		api.GET("/get_author/:id", authorRoutes.GetAuthor)

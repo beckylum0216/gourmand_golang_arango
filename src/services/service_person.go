@@ -121,3 +121,109 @@ func (s *PersonService) DeletePerson(ctx context.Context, id string) error {
 
 	return err
 }
+
+func (s *PersonService) GetPersonDetails(ctx context.Context, key string) (*entities.PersonWithDetails, error) {
+	// 1. Fetch person
+	colPersons, err := s.db.GetCollection(ctx, "persons", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var person entities.Person
+	id := "persons/" + key
+	_, err = colPersons.ReadDocument(ctx, id, &person)
+	if err != nil {
+		return nil, errors.New("person not found")
+	}
+
+	// 2. Fetch user via edge
+	var user *entities.User = nil
+	queryUser := `
+	FOR e IN person_user
+		FILTER e._from == @from
+		FOR u IN users
+			FILTER u._id == e._to
+			RETURN u`
+	bindVars := map[string]interface{}{
+		"from": "persons/" + key,
+	}
+
+	cursor, err := s.db.Query(ctx, queryUser, &arangodb.QueryOptions{BindVars: bindVars})
+	if err == nil {
+		var u entities.User
+		_, err := cursor.ReadDocument(ctx, &u)
+		if err == nil {
+			user = &u
+		}
+	}
+
+	// 3. Fetch author via edge
+	var author *entities.Author = nil
+	queryAuthor := `
+        FOR e IN person_author
+            FILTER e._from == @from
+            FOR a IN authors
+                FILTER a._id == e._to
+                RETURN a
+    `
+	cursor, err = s.db.Query(ctx, queryAuthor, &arangodb.QueryOptions{BindVars: bindVars})
+	if err == nil {
+		var a entities.Author
+		if cursor.HasMore() {
+			_, err := cursor.ReadDocument(ctx, &a)
+			if err == nil {
+				author = &a
+			}
+		}
+	}
+
+	// .4 Return combined result
+	return &entities.PersonWithDetails{
+		Person: person,
+		User:   user,
+		Author: author,
+	}, nil
+}
+
+func (s *PersonService) GetPeopleWithDetails(ctx context.Context) ([]*entities.PeopleWithDetails, error) {
+	query := `
+        FOR p IN persons
+            LET user = FIRST(
+                FOR e IN persons_users
+                    FILTER e._from == p._id
+                    RETURN DOCUMENT(e._to)
+            )
+            LET author = FIRST(
+                FOR e IN persons_authors
+                    FILTER e._from == p._id
+                    RETURN DOCUMENT(e._to)
+            )
+            RETURN {
+                person: p,
+                user: user,
+                author: author
+            }
+    `
+
+	opts := &arangodb.QueryOptions{
+		BindVars: map[string]interface{}{},
+	}
+
+	cursor, err := s.db.Query(ctx, query, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []*entities.PeopleWithDetails
+
+	for cursor.HasMore() {
+		var item entities.PeopleWithDetails
+		_, err := cursor.ReadDocument(ctx, &item)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, &item)
+	}
+
+	return results, nil
+}
