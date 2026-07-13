@@ -67,24 +67,24 @@ func main() {
 		api.POST("/create_user", userRoutes.CreateUser)
 		api.GET("/get_user/:id", userRoutes.GetUser)
 		api.GET("/get_users", userRoutes.GetUsers)
-		api.POST("/delete_user/:id", userRoutes.DeleteUser)
+		api.DELETE("/delete_user/:id", userRoutes.DeleteUser)
 
 		api.GET("/get_person/:id", personRoutes.GetPerson)
 		api.GET("/get_persons", personRoutes.GetPersons)
-		api.POST("/delete_person/:id", personRoutes.DeletePerson)
+		api.DELETE("/delete_person/:id", personRoutes.DeletePerson)
 		api.GET("/person/:id/details", personRoutes.GetPersonDetails)
 		api.GET("/get_people_with_details", personRoutes.GetPeopleWithDetails)
 
 		api.POST("/create_author", authorRoutes.CreateAuthor)
 		api.GET("/get_author/:id", authorRoutes.GetAuthor)
 		api.GET("/get_authors", authorRoutes.GetAuthors)
-		api.POST("/delete_author/:id", authorRoutes.DeleteAuthor)
+		api.DELETE("/delete_author/:id", authorRoutes.DeleteAuthor)
 
 		api.POST("/create_recipe", recipeRoutes.CreateRecipe)
 		api.POST("/transcribe_recipe", recipeRoutes.TranscribeRecipe)
 		api.GET("/get_recipe/:id", recipeRoutes.GetRecipe)
 		api.GET("/get_recipes", recipeRoutes.GetRecipes)
-		api.POST("/delete_recipe/:id", recipeRoutes.DeleteRecipe)
+		api.DELETE("/delete_recipe/:id", recipeRoutes.DeleteRecipe)
 
 		api.POST("/login", authRoutes.AuthenticateUser)
 		api.GET("/authenticate_token", authRoutes.AuthenticateToken)

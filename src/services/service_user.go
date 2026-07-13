@@ -8,6 +8,7 @@ import (
 	"github.com/arangodb/go-driver/v2/arangodb"
 	"gourmand.golang.arango/src/entities"
 	"gourmand.golang.arango/src/interfaces"
+	"gourmand.golang.arango/src/utils"
 )
 
 const users_collection = "users"
@@ -28,7 +29,7 @@ func NewUserService(db arangodb.Database) interfaces.IUser {
 	}
 
 	return &UserService{
-		db: db, 
+		db:       db,
 		_persons: personService.(*PersonService),
 		_auth:    authService,
 	}
@@ -108,7 +109,7 @@ func (s *UserService) CreateUser(ctx context.Context,
 	if err != nil {
 		return errors.New("failed to create edge between user and authentication: " + err.Error())
 	}
-	
+
 	return nil
 }
 
@@ -131,7 +132,7 @@ func (s *UserService) GetUser(ctx context.Context, id string) (*entities.User, e
 
 func (s *UserService) GetUsers(ctx context.Context) ([]*entities.User, error) {
 	query := `FOR u IN @@collection RETURN u`
-	
+
 	bindVars := map[string]interface{}{
 		"@collection": users_collection,
 	}
@@ -192,14 +193,24 @@ func (s *UserService) UpdateUser(ctx context.Context, id string, user *entities.
 }
 
 func (s *UserService) DeleteUser(ctx context.Context, id string) error {
-	col, err := s.db.GetCollection(ctx, users_collection, nil)
+	userId := "users/" + id
+
+	err := utils.DeleteEdges(ctx, s.db, `
+        FOR e IN person_user
+            FILTER e._to == @userId
+            REMOVE e IN person_user
+
+        FOR e IN users_authentications
+            FILTER e._from == @userId OR e._to == @userId
+            REMOVE e IN users_authentications
+    `, map[string]interface{}{
+		"userId": userId,
+	})
 	if err != nil {
 		return err
 	}
 
+	col, _ := s.db.GetCollection(ctx, users_collection, nil)
 	_, err = col.DeleteDocument(ctx, id)
-	if err != nil {
-		return errors.New("user not found")
-	}
-	return nil
+	return err
 }

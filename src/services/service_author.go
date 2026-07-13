@@ -23,9 +23,9 @@ func NewAuthorService(db arangodb.Database) interfaces.IAuthor {
 	return &AuthorService{db: db, _persons: personService.(*PersonService)}
 }
 
-func (s *AuthorService) CreateAuthor(ctx context.Context, 
+func (s *AuthorService) CreateAuthor(ctx context.Context,
 	person *entities.Person, author *entities.Author) error {
-	
+
 	if author == nil {
 		return errors.New("author is nil")
 	}
@@ -68,11 +68,10 @@ func (s *AuthorService) CreateAuthor(ctx context.Context,
 		"_to":   "authors/" + author.Id,
 	}
 
-	if _, err := edgeCol.CreateDocument(ctx, edge); 
-	err != nil {
+	if _, err := edgeCol.CreateDocument(ctx, edge); err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -132,7 +131,6 @@ func (s *AuthorService) UpdateAuthor(ctx context.Context, id string, author *ent
 		return err
 	}
 
-
 	patch := map[string]interface{}{
 		"source":        author.Source,
 		"credit_string": author.CreditString,
@@ -143,11 +141,30 @@ func (s *AuthorService) UpdateAuthor(ctx context.Context, id string, author *ent
 		return errors.New("author not found")
 	}
 
-
 	return nil
 }
 
 func (s *AuthorService) DeleteAuthor(ctx context.Context, id string) error {
+	// Build full ArangoDB document ID
+	authorId := "authors/" + id
+
+	// 1. Delete edges pointing to this author
+	edgeQuery := `
+        FOR e IN persons_authors
+            FILTER e._to == @authorId
+            REMOVE e IN persons_authors
+    `
+	opts := &arangodb.QueryOptions{
+		BindVars: map[string]interface{}{
+			"authorId": authorId,
+		},
+	}
+
+	_, err := s.db.Query(ctx, edgeQuery, opts)
+	if err != nil {
+		return err
+	}
+
 	col, err := s.db.GetCollection(ctx, authors_collection, nil)
 	if err != nil {
 		return err
