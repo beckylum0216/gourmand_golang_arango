@@ -196,13 +196,13 @@ func (s *UserService) DeleteUser(ctx context.Context, id string) error {
 	userId := "users/" + id
 
 	err := utils.DeleteEdges(ctx, s.db, `
-        FOR e IN person_user
+        FOR e IN persons_users
             FILTER e._to == @userId
-            REMOVE e IN person_user
+            REMOVE e IN persons_users
 
-        FOR e IN users_authentications
-            FILTER e._from == @userId OR e._to == @userId
-            REMOVE e IN users_authentications
+        FOR ua IN users_authentications
+            FILTER ua._from == @userId OR ua._to == @userId
+            REMOVE ua IN users_authentications
     `, map[string]interface{}{
 		"userId": userId,
 	})

@@ -8,6 +8,7 @@ import (
 
 	"gourmand.golang.arango/src/entities"
 	"gourmand.golang.arango/src/interfaces"
+	"gourmand.golang.arango/src/utils"
 )
 
 const collection = "persons"
@@ -112,11 +113,20 @@ func (s *PersonService) UpdatePerson(ctx context.Context, id string, person *ent
 }
 
 func (s *PersonService) DeletePerson(ctx context.Context, id string) error {
-	col, err := s.db.GetCollection(ctx, collection, nil)
+	authorId := "authors/" + id
+
+	err := utils.DeleteEdges(ctx, s.db, `
+        FOR e IN persons_authors
+            FILTER e._to == @authorId
+            REMOVE e IN persons_authors
+    `, map[string]interface{}{
+		"authorId": authorId,
+	})
 	if err != nil {
 		return err
 	}
 
+	col, err := s.db.GetCollection(ctx, collection, nil)
 	_, err = col.DeleteDocument(ctx, id)
 
 	return err
