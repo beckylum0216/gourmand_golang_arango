@@ -195,7 +195,7 @@ func (s *PersonService) GetPersonDetails(ctx context.Context, key string) (*enti
 	}, nil
 }
 
-func (s *PersonService) GetPeopleWithDetails(ctx context.Context) ([]*entities.PeopleWithDetails, error) {
+func (s *PersonService) GetPeopleWithDetails(ctx context.Context) ([]*entities.PersonWithDetails, error) {
 	query := `
         FOR p IN persons
             LET user = FIRST(
@@ -224,10 +224,10 @@ func (s *PersonService) GetPeopleWithDetails(ctx context.Context) ([]*entities.P
 		return nil, err
 	}
 
-	var results []*entities.PeopleWithDetails
+	var results []*entities.PersonWithDetails
 
 	for cursor.HasMore() {
-		var item entities.PeopleWithDetails
+		var item entities.PersonWithDetails
 		_, err := cursor.ReadDocument(ctx, &item)
 		if err != nil {
 			return nil, err

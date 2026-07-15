@@ -13,5 +13,5 @@ type IPerson interface {
 	UpdatePerson(ctx context.Context, id string, person *entities.Person) error
 	DeletePerson(ctx context.Context, id string) error
 	GetPersonDetails(ctx context.Context, key string) (*entities.PersonWithDetails, error)
-	GetPeopleWithDetails(ctx context.Context) ([]*entities.PeopleWithDetails, error)
+	GetPeopleWithDetails(ctx context.Context) ([]*entities.PersonWithDetails, error)
 }
