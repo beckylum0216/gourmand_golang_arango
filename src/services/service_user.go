@@ -36,15 +36,13 @@ func NewUserService(db arangodb.Database) interfaces.IUser {
 
 func (s *UserService) CreateUser(ctx context.Context,
 	person *entities.Person, user *entities.User, auth *entities.Authentication) error {
-	if user == nil {
-		return errors.New("user is nil")
+
+	existing, err := s._persons.GetPerson(ctx, person.Id)
+	if err != nil {
+		return err
 	}
 
-	if person.Id != "" {
-		existing, err := s._persons.GetPerson(ctx, person.Id)
-		if err != nil {
-			return err
-		}
+	if existing != nil{
 		person.Id = existing.Id
 	} else {
 		created, err := s._persons.CreatePerson(ctx, person)
@@ -60,7 +58,6 @@ func (s *UserService) CreateUser(ctx context.Context,
 	}
 
 	meta, err := col.CreateDocument(ctx, user)
-
 	if err != nil {
 		return err
 	}

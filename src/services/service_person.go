@@ -131,15 +131,19 @@ func (s *PersonService) GetPersonDetails(ctx context.Context, key string) (*enti
 
 	var person entities.Person
 	id := "persons/" + key
-	_, err = colPersons.ReadDocument(ctx, id, &person)
+
+	meta, err := colPersons.ReadDocument(ctx, id, &person)
+
 	if err != nil {
 		return nil, errors.New("person not found")
 	}
 
+	person.Id = meta.Key
+
 	// 2. Fetch user via edge
-	var user *entities.User = nil
+	var user entities.User
 	queryUser := `
-	FOR e IN person_user
+	FOR e IN persons_users
 		FILTER e._from == @from
 		FOR u IN users
 			FILTER u._id == e._to
@@ -149,43 +153,67 @@ func (s *PersonService) GetPersonDetails(ctx context.Context, key string) (*enti
 	}
 
 	cursor, err := s.db.Query(ctx, queryUser, &arangodb.QueryOptions{BindVars: bindVars})
-	if err == nil {
-		var u entities.User
-		_, err := cursor.ReadDocument(ctx, &u)
-		if err == nil {
-			user = &u
+	if err != nil {
+		return nil, err
+	}
+
+	defer cursor.Close()
+
+	for cursor.HasMore() {
+		meta, err := cursor.ReadDocument(ctx, &user)
+
+		user.Id = meta.Key
+
+		if err != nil {
+			return nil, err
 		}
 	}
 
 	// 3. Fetch author via edge
-	var author *entities.Author = nil
+	var author entities.Author
 	queryAuthor := `
-        FOR e IN person_author
+        FOR e IN persons_authors
             FILTER e._from == @from
             FOR a IN authors
                 FILTER a._id == e._to
                 RETURN a
     `
 	cursor, err = s.db.Query(ctx, queryAuthor, &arangodb.QueryOptions{BindVars: bindVars})
-	if err == nil {
-		var a entities.Author
-		if cursor.HasMore() {
-			_, err := cursor.ReadDocument(ctx, &a)
-			if err == nil {
-				author = &a
-			}
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer cursor.Close()
+
+	if cursor.HasMore() {
+		meta, err := cursor.ReadDocument(ctx, &author)
+		author.Id = meta.Key
+
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	// .4 Return combined result
+	var u *entities.User = nil
+	if user.Id != "" {
+		u = &user
+	}
+
+	var a *entities.Author = nil
+	if author.Id != "" {
+		a = &author
+	}
+
+	// 4. Return combined result
 	return &entities.PersonWithDetails{
 		Person: person,
-		User:   user,
-		Author: author,
+		User:   u,
+		Author: a,
 	}, nil
 }
 
-func (s *PersonService) GetPeopleWithDetails(ctx context.Context) ([]*entities.PeopleWithDetails, error) {
+func (s *PersonService) GetPeopleWithDetails(ctx context.Context) ([]*entities.PersonWithDetails, error) {
 	query := `
         FOR p IN persons
             LET user = FIRST(
@@ -214,11 +242,16 @@ func (s *PersonService) GetPeopleWithDetails(ctx context.Context) ([]*entities.P
 		return nil, err
 	}
 
-	var results []*entities.PeopleWithDetails
+	defer cursor.Close()
+
+	var results []*entities.PersonWithDetails
 
 	for cursor.HasMore() {
-		var item entities.PeopleWithDetails
-		_, err := cursor.ReadDocument(ctx, &item)
+		var item entities.PersonWithDetails
+		meta, err := cursor.ReadDocument(ctx, &item)
+
+		item.Person.Id = meta.Key
+
 		if err != nil {
 			return nil, err
 		}
